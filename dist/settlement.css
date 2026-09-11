@@ -1,0 +1,576 @@
+#build-version {
+  position: absolute;
+  top: 115px;
+  left: 40px;
+  font-size: 10px;
+  color: #86a28f;
+  letter-spacing: 0.8px;
+  pointer-events: none;
+}
+#update-notice {
+  position: absolute;
+  top: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 95vw;
+  padding: 10px 14px;
+  background: #d4e4b3;
+  color: #263e2d;
+  border: 1px solid #e7efd5;
+  border-radius: 8px;
+  box-shadow: 0 5px 25px #001b2155;
+  font-size: 12px;
+}
+#reload-update {
+  padding: 7px 10px;
+  color: #e1ebc9;
+  background: #294b35;
+  border-radius: 5px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+@media (min-width: 761px) {
+  .civilization-mode #land-actions #return-nest {
+    display: grid;
+  }
+}
+#settlement-unlock {
+  position: absolute;
+  left: 36px;
+  top: 514px;
+  width: 276px;
+  background: linear-gradient(140deg, #e0cf9c, #b3bb85);
+  color: #244236;
+  border: 1px solid #eadcb2;
+  border-radius: 10px;
+  padding: 17px;
+}
+#settlement-unlock > span {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+#settlement-unlock strong {
+  display: block;
+  font-family: Manrope, sans-serif;
+  font-size: 18px;
+  margin: 9px 0 12px;
+}
+#found-settlement {
+  width: 100%;
+  padding: 11px;
+  background: #244236;
+  color: #eef1d6;
+  border-radius: 5px;
+  font-size: 12px;
+}
+#village-resources {
+  position: absolute;
+  top: 119px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 25px;
+  background: #14382dda;
+  border: 1px solid #b5cf9e38;
+  border-radius: 11px;
+  padding: 13px 24px;
+  backdrop-filter: blur(12px);
+}
+#village-resources > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 98px;
+}
+#village-resources > div > span {
+  font-size: 24px;
+  color: #e6d6a8;
+}
+#village-resources p {
+  font-size: 10px;
+  color: #a7c1a7;
+  margin: 0;
+}
+#village-resources strong {
+  font-size: 20px;
+  line-height: 1.25;
+  color: #eef3d8;
+  display: block;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+#village-resources small {
+  align-self: flex-end;
+  font-size: 10px;
+  color: #bad6a2;
+  padding-bottom: 3px;
+}
+#village-panel {
+  position: absolute;
+  right: 30px;
+  top: 149px;
+  width: 252px;
+  max-height: calc(100dvh - 296px);
+  overflow: auto;
+  background: #153b2eeb;
+  backdrop-filter: blur(18px);
+  border: 1px solid #bad0a640;
+  border-radius: 12px;
+  padding: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: #7a9873 transparent;
+}
+#village-panel .eyebrow {
+  font-size: 10px;
+  justify-content: space-between;
+}
+#village-population {
+  color: #e3e8bf;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+.village-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  margin: 16px 0 12px;
+}
+.village-tabs button {
+  background: transparent;
+  flex: 1;
+  padding: 10px;
+  color: #93b092;
+  font-size: 12px;
+}
+.village-tabs button[aria-pressed="true"] {
+  color: #e4efcd;
+  border-bottom: 2px solid #c5db9b;
+}
+.build-card {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 3px 9px;
+  text-align: left;
+  width: 100%;
+  background: #a3c18e09;
+  border: 1px solid #accc9430;
+  border-radius: 7px;
+  padding: 10px;
+  margin: 7px 0;
+}
+.build-card:hover {
+  background: #b6d79c19;
+  border-color: #d2deba77;
+}
+.build-card.selected {
+  border-color: #cfdfa5;
+  background: #c0d89320;
+}
+.build-card > span {
+  grid-row: 1/3;
+  font-size: 25px;
+  align-self: center;
+  color: #dbd5a5;
+}
+.build-card strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.build-card small {
+  font-size: 9px;
+  color: #a8bfa0;
+}
+.build-card.short-resources small {
+  color: #dab495;
+}
+#building-details {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  margin-top: 15px;
+}
+#selected-building {
+  font-weight: 500;
+  font-size: 13px;
+  color: #ebedcf;
+}
+#building-condition {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #aec1a4;
+  margin: 6px 0 9px;
+}
+#repair-building,
+#cancel-building {
+  background: #aac68c15;
+  border: 1px solid #bcd8a944;
+  padding: 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #d3dfbb;
+  width: 100%;
+}
+#repair-building:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+#cancel-building {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ead0b0;
+  margin-top: 12px;
+}
+#raid-status {
+  font-size: 11px;
+  color: #d8d9af;
+  border-top: 1px solid var(--line);
+  padding-top: 13px;
+  margin-top: 15px;
+  line-height: 1.5;
+}
+#raid-status.danger {
+  color: #ffb09a;
+}
+.village-intro {
+  font-size: 12px;
+  color: #b6c8ad;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+.job-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  padding: 13px 0;
+}
+.job-row > span {
+  flex: 1;
+  font-size: 12px;
+  color: #c6d5b8;
+}
+.job-row strong {
+  font-weight: 500;
+  font-size: 14px;
+  min-width: 16px;
+  text-align: center;
+}
+.job-row button {
+  width: 25px;
+  height: 25px;
+  background: #bad39c13;
+  border: 1px solid #b9d49b44;
+  border-radius: 5px;
+}
+.job-row button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+#idle-count {
+  font-size: 11px;
+  color: #a5b99b;
+  margin: 18px 0;
+}
+#recruit-villager {
+  width: 100%;
+  padding: 11px;
+  background: #c5d9a2;
+  color: #29412c;
+  border-radius: 5px;
+  font-size: 12px;
+}
+#recruit-villager:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+#recruit-hint {
+  display: block;
+  font-size: 10px;
+  color: #a9b69c;
+  line-height: 1.7;
+  margin-top: 9px;
+}
+#village-mission {
+  position: absolute;
+  left: 36px;
+  top: 423px;
+  width: 276px;
+  background: #153c2edb;
+  border: 1px solid #b5cf9e38;
+  padding: 19px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+#village-mission .eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.2px;
+}
+#mission-title {
+  display: block;
+  font-family: Manrope, sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  margin: 12px 0 14px;
+}
+#monument-requirements > div {
+  font-size: 11px;
+  color: #c0ceb1;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+#monument-requirements .done {
+  color: #c7e6a7;
+}
+#toggle-village {
+  position: absolute;
+  right: 35px;
+  bottom: 135px;
+  background: #c8dba6;
+  color: #203f2e;
+  padding: 10px 14px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+#toggle-village kbd {
+  border-color: #2a4c3433;
+  color: #2a4c34;
+}
+.civilization-mode .objectives,
+.civilization-mode .environment,
+.civilization-mode .biome-label,
+.civilization-mode .chapter-hud,
+.civilization-mode #sing {
+  display: none;
+}
+.civilization-mode .land-actions {
+  left: 43%;
+  bottom: 135px;
+}
+.civilization-mode #interaction-hint {
+  bottom: 195px;
+}
+.civilization-mode #species-name {
+  font-size: 21px;
+}
+.civilization-mode #land-actions button:last-child {
+  display: none;
+}
+.civilization-mode .organism {
+  background: #14382de0;
+}
+.civilization-mode header {
+  background: linear-gradient(#173d2ae8, #163a3240);
+}
+.civilization-mode .vignette {
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    transparent 25%,
+    #14322024 70%,
+    #10291d80
+  );
+}
+@media (min-width: 1600px) {
+  #village-mission {
+    left: 48px;
+    top: 442px;
+  }
+  #settlement-unlock {
+    left: 48px;
+    top: 530px;
+  }
+}
+@media (max-width: 1100px) {
+  #village-panel {
+    right: 22px;
+    width: 220px;
+    padding: 14px;
+  }
+  #village-resources {
+    gap: 14px;
+    padding: 11px 16px;
+  }
+  #village-resources > div {
+    min-width: 77px;
+    gap: 6px;
+  }
+  #village-mission {
+    left: 22px;
+    width: 236px;
+    top: 415px;
+  }
+  #settlement-unlock {
+    left: 22px;
+    width: 236px;
+  }
+  #build-version {
+    left: 25px;
+  }
+}
+@media (max-width: 760px) {
+  #build-version {
+    top: 84px;
+    left: 16px;
+    font-size: 8px;
+  }
+  #settlement-unlock {
+    left: 15px;
+    top: 400px;
+    width: 194px;
+    padding: 12px;
+  }
+  #settlement-unlock strong {
+    font-size: 15px;
+  }
+  .civilization-mode .organism {
+    top: 100px;
+    width: 176px;
+    padding: 12px;
+  }
+  .civilization-mode .species-mark {
+    display: none;
+  }
+  .civilization-mode .species {
+    margin: 12px 0;
+  }
+  .civilization-mode #species-name {
+    font-size: 17px;
+  }
+  .civilization-mode .dna-row {
+    display: none;
+  }
+  .civilization-mode .meter {
+    margin-bottom: 0;
+  }
+  #village-resources {
+    top: 108px;
+    left: auto;
+    right: 12px;
+    transform: none;
+    padding: 10px;
+    gap: 12px;
+    border-radius: 9px;
+  }
+  #village-resources > div {
+    min-width: 29px;
+    display: block;
+  }
+  #village-resources > div > span {
+    display: none;
+  }
+  #village-resources p {
+    font-size: 8px;
+  }
+  #village-resources strong {
+    font-size: 17px;
+  }
+  #village-resources small {
+    font-size: 8px;
+  }
+  #village-panel {
+    top: 188px;
+    right: 12px;
+    width: 192px;
+    padding: 12px;
+    max-height: calc(100dvh - 330px);
+    z-index: 2;
+  }
+  #village-panel .eyebrow {
+    font-size: 8px;
+  }
+  .build-card {
+    padding: 8px;
+    margin: 5px 0;
+    gap: 2px 5px;
+  }
+  .build-card > span {
+    font-size: 21px;
+  }
+  .build-card strong {
+    font-size: 11px;
+  }
+  .build-card small {
+    font-size: 8px;
+  }
+  .village-tabs {
+    margin: 10px 0;
+  }
+  .village-tabs button {
+    padding: 8px;
+  }
+  #village-mission {
+    left: 15px;
+    top: 263px;
+    width: 148px;
+    padding: 12px;
+  }
+  #village-mission .eyebrow {
+    font-size: 7px;
+    line-height: 1.6;
+  }
+  #mission-title {
+    font-size: 14px;
+  }
+  #monument-requirements > div {
+    font-size: 9px;
+    margin: 10px 0;
+  }
+  #toggle-village {
+    right: 15px;
+    bottom: 135px;
+    font-size: 11px;
+    padding: 10px;
+  }
+  .civilization-mode #interaction-hint {
+    bottom: 184px;
+    max-width: 80vw;
+  }
+  .civilization-mode .land-actions {
+    left: 45%;
+    bottom: 130px;
+  }
+  .civilization-mode .land-actions button {
+    min-width: 73px;
+  }
+  .civilization-mode .mobile-controls {
+    bottom: 136px;
+  }
+  .village-intro {
+    font-size: 11px;
+  }
+  .job-row > span {
+    font-size: 11px;
+  }
+  .job-row {
+    gap: 5px;
+    padding: 11px 0;
+  }
+}
+@media (max-height: 720px) and (min-width: 761px) {
+  #village-mission {
+    top: 365px;
+    padding: 13px;
+  }
+  #village-mission .eyebrow {
+    font-size: 8px;
+  }
+  #monument-requirements > div {
+    margin: 7px 0;
+  }
+  #settlement-unlock {
+    top: 443px;
+    padding: 12px;
+  }
+  #village-panel {
+    top: 139px;
+    max-height: calc(100dvh - 265px);
+  }
+  #village-resources {
+    top: 108px;
+  }
+}

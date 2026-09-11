@@ -1,3 +1,6 @@
+import { newSettlement, normalizeSettlement } from "./settlement-rules.js";
+import { newSpace, normalizeSpace } from "./space-rules.js";
+// Keep the storage key stable so existing cell and creature journeys migrate.
 export const SAVE_KEY = "primordia.journey.v2";
 export const newJourney = () => ({
   stage: "cell",
@@ -21,6 +24,8 @@ export const newJourney = () => ({
     discoveries: [],
     completed: false,
   },
+  village: newSettlement(),
+  space: newSpace(),
 });
 
 export function canWalk(state) {
@@ -47,6 +52,22 @@ export function chapterComplete(state) {
   );
 }
 
+export function canFound(state) {
+  return state.stage === "creature" && chapterComplete(state);
+}
+
+export function enterCivilizationStage(state) {
+  if (!canFound(state)) return false;
+  state.stage = "civilization";
+  state.land.completed = true;
+  state.land.x = 0;
+  state.land.y = 0;
+  state.land.hunger = 100;
+  state.health = 100;
+  state.village = newSettlement();
+  return true;
+}
+
 function bounded(value, fallback, min, max) {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.min(max, Math.max(min, value))
@@ -58,9 +79,11 @@ export function parseJourney(raw) {
   try {
     const payload = JSON.parse(raw);
     if (
-      payload.version !== 2 ||
+      ![2, 3, 4].includes(payload.version) ||
       !payload.state ||
-      !["cell", "creature"].includes(payload.state.stage)
+      !["cell", "creature", "civilization", "space"].includes(
+        payload.state.stage,
+      )
     )
       return null;
     const data = payload.state,
@@ -102,7 +125,19 @@ export function parseJourney(raw) {
       completed: false,
     };
     state.land.completed = chapterComplete(state) && land.completed === true;
-    if (data.stage === "creature" && canWalk(state)) state.stage = "creature";
+    if (data.stage !== "cell" && canWalk(state)) state.stage = "creature";
+    if (["civilization", "space"].includes(data.stage) && canFound(state)) {
+      state.stage = "civilization";
+      state.land.completed = true;
+      state.village = normalizeSettlement(data.village);
+      state.space = normalizeSpace(data.space);
+      if (
+        data.stage === "space" &&
+        state.village.completed &&
+        state.space.researched
+      )
+        state.stage = "space";
+    }
     if (state.health === 0) {
       if (state.stage === "cell") return newJourney();
       state.health = 100;
@@ -119,7 +154,7 @@ export function parseJourney(raw) {
 
 export function saveJourney(storage, state) {
   try {
-    storage.setItem(SAVE_KEY, JSON.stringify({ version: 2, state }));
+    storage.setItem(SAVE_KEY, JSON.stringify({ version: 4, state }));
     return true;
   } catch {
     return false;

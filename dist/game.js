@@ -1,9 +1,35 @@
 import * as THREE from "./three.module.js";
 import { CreatureWorld } from "./creature.js";
+import { SettlementWorld } from "./settlement.js";
+import { SpaceWorld } from "./space.js";
+import {
+  SYSTEMS,
+  researchSpace,
+  launchSpace,
+  jump,
+  survey,
+  colonize,
+  contact,
+  beaconReady,
+  buildBeacon,
+} from "./space-rules.js";
+import {
+  BUILDINGS,
+  JOBS,
+  capacity,
+  idleWorkers,
+  affordable,
+  monumentRequirements,
+  production,
+  assignWorker,
+  recruit,
+} from "./settlement-rules.js";
 import {
   newJourney,
   canWalk,
+  canFound,
   enterCreatureStage,
+  enterCivilizationStage,
   saveJourney,
   loadJourney,
 } from "./progression.js";
@@ -699,6 +725,7 @@ $("pause").onclick = pauseGame;
 $("journal").onclick = journal;
 $("sound").onclick = toggleSound;
 addEventListener("keydown", (e) => {
+  if (e.code === "Space" && e.target.closest?.("button")) return;
   if (
     ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
       e.code,
@@ -720,6 +747,11 @@ addEventListener("keydown", (e) => {
   }
   if (e.repeat) return;
   if (e.code === "Escape") {
+    if (!paused && state.stage === "civilization" && landWorld?.buildType) {
+      landWorld.cancelPlacement();
+      updateVillageUI();
+      return;
+    }
     pauseGame();
     return;
   }
@@ -738,8 +770,23 @@ const setPointer = (e) => {
 };
 canvas.addEventListener("pointerdown", (e) => {
   if (paused) return;
-  pointerDown = true;
   setPointer(e);
+  if (state.stage === "civilization" && landWorld) {
+    if (landWorld.buildType) {
+      landWorld.placeAtPointer(pointer);
+      pointerDown = false;
+      updateVillageUI();
+      return;
+    }
+    if (landWorld.selectAtPointer(pointer)) {
+      pointerDown = false;
+      $("village-panel").hidden = false;
+      showVillageTab("build");
+      updateVillageUI();
+      return;
+    }
+  }
+  pointerDown = true;
   canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener("pointermove", setPointer);
@@ -927,7 +974,7 @@ function loop(now) {
   frame++;
   if (!paused) {
     totalTime += dt;
-    if (state.stage === "creature" && landWorld) {
+    if (state.stage !== "cell" && landWorld) {
       const direction = new THREE.Vector2(
         (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) -
           (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0),
@@ -960,7 +1007,7 @@ function loop(now) {
       saveClock = 0;
     }
   }
-  if (state.stage === "creature" && landWorld) {
+  if (state.stage !== "cell" && landWorld) {
     landWorld.updateCamera(dt);
     renderer.render(landWorld.scene, landWorld.camera);
   } else {
@@ -985,7 +1032,7 @@ function loop(now) {
   uiTime += dt;
   if (uiTime > 0.12) {
     updateUI();
-    if (landWorld && state.stage === "creature") landWorld.drawMap(mapCtx);
+    if (landWorld && state.stage !== "cell") landWorld.drawMap(mapCtx);
     else drawMap();
     uiTime = 0;
   }
@@ -1042,12 +1089,20 @@ function restoreCellTraits() {
 }
 
 function startLand() {
-  landWorld = new CreatureWorld(state, {
+  if (state.stage === "space") {
+    startSpace();
+    return;
+  }
+  const World =
+    state.stage === "civilization" ? SettlementWorld : CreatureWorld;
+  landWorld = new World(state, {
     toast,
     note: soundNote,
     save: saveProgress,
     death: gameOver,
     complete: completeChapter,
+    settlementDefeat: settlementDefeat,
+    victory: civilizationVictory,
   });
   landWorld.resize(innerWidth, innerHeight);
   if (renderer.shadowMap) {
@@ -1067,7 +1122,7 @@ function startLand() {
   $("depth-name").textContent = "VERDANT CRADLE";
   $("depth-value").textContent = "LAND";
   $("food-legend").textContent = "Fruit";
-  $("chapter-count").textContent = "02 / 03";
+  $("chapter-count").textContent = "02 / 04";
   $("chapter-eyebrow").textContent = "A WORLD BEYOND";
   $("chapter-title").textContent = "Find your place";
   $("chapter-description").textContent = "A new world. A familiar spark.";
@@ -1076,18 +1131,19 @@ function startLand() {
   $("tip-copy").innerHTML =
     "Sing to peaceful creatures.<br>Your nest is a safe place to rest.";
   $("friends-objective").hidden = false;
+  if (state.stage === "civilization") configureSettlementHUD();
 }
 
 function completeChapter() {
   showModal(
     "chapter-complete",
     "A species finds its home.",
-    `<p>You explored the valley, gathered food, and found companions. Lumina has grown from a lone cell into an established species.</p><div class="progress-summary"><div><strong>3</strong><span>Landmarks found</span></div><div><strong>${state.land.friends.length}</strong><span>Companions</span></div><div><strong>${state.land.fruit}</strong><span>Fruit gathered</span></div></div><p>You can keep exploring and adapting. Civilization is the next chapter in development.</p><button class="modal-action" data-resume>Continue in the valley</button>`,
+    `<p>You explored the valley, gathered food, and found companions. Your species is ready to build a future together.</p><div class="progress-summary"><div><strong>3</strong><span>Landmarks found</span></div><div><strong>${state.land.friends.length}</strong><span>Companions</span></div><div><strong>${state.land.fruit}</strong><span>Fruit gathered</span></div></div><p>Found a settlement at your nest to begin the civilization chapter.</p><div class="chapter-options"><button class="modal-action" id="open-settlement">Begin civilization ↗</button><button class="modal-secondary" data-resume>Keep exploring</button></div>`,
   );
 }
 
 function openShore() {
-  if (state.stage === "creature") {
+  if (state.stage !== "cell") {
     toast("You are already exploring the creature stage.");
     return;
   }
@@ -1108,8 +1164,21 @@ function openShore() {
 
 const cellUpdateUI = updateUI;
 updateUI = function () {
+  $("launch-space").hidden =
+    state.stage !== "civilization" || !state.village.completed;
+  if (state.stage === "space") {
+    updateSpaceUI();
+    return;
+  }
   cellUpdateUI();
   $("chapter-banner").hidden = !canWalk(state);
+  $("settlement-unlock").hidden = !canFound(state);
+  $("civilization-stage").className =
+    state.stage === "civilization"
+      ? "stage current"
+      : canFound(state)
+        ? "stage unlocked"
+        : "stage locked";
   if (state.stage === "cell") {
     $("creature-stage").className = canWalk(state)
       ? "stage unlocked"
@@ -1147,16 +1216,21 @@ updateUI = function () {
     : state.dna >= 30
       ? "A new adaptation is ready."
       : "Build the creature you will become.";
+  if (state.stage === "civilization") updateVillageUI();
 };
 const cellDash = dash;
 dash = function () {
   if (paused || dead) return;
-  if (state.stage === "creature") {
+  if (state.stage !== "cell") {
     if (landWorld.dash()) soundNote(200, 0.1);
   } else cellDash();
 };
 const cellEvolution = openEvolution;
 openEvolution = function () {
+  if (state.stage === "space") {
+    showHelp();
+    return;
+  }
   if (state.stage === "cell") {
     cellEvolution();
     return;
@@ -1199,6 +1273,18 @@ upgrade = function (type) {
 };
 const cellHelp = showHelp;
 showHelp = function () {
+  if (state.stage === "space") {
+    showModal(
+      "space-help",
+      "A species among the stars.",
+      `<p>Choose a star system to jump there for 3 fuel. Solar collectors restore fuel automatically, so you can always continue.</p><p>Select a planet and survey it for 18 ore and 12 knowledge. Surveyed ocean gardens support colonies for 40 ore and 20 knowledge. Each colony produces ore over time. Some garden worlds are home to alien civilizations: establish contact for a one-time exchange of resources.</p><p>Survey 6 worlds, found 3 colonies, and meet 2 civilizations. Then assemble the Horizon beacon for 60 ore and 40 knowledge. Exploration can continue after completion.</p><button class="modal-action" data-resume>Return to orbit</button>`,
+    );
+    return;
+  }
+  if (state.stage === "civilization") {
+    showCivilizationHelp();
+    return;
+  }
   if (state.stage === "cell") {
     cellHelp();
     return;
@@ -1210,10 +1296,18 @@ showHelp = function () {
   );
 };
 journal = function () {
+  if (state.stage === "space") {
+    showModal(
+      "journal",
+      "The story of your species.",
+      `<p>Chapter 04 · The Starward Frontier</p><div class="notes-row"><span>Worlds surveyed / Colonies</span><strong>${state.space.surveyed.length} / ${state.space.colonies.length}</strong></div><div class="notes-row"><span>Alien contacts</span><strong>${state.space.contacts.length}</strong></div><p>${saveAvailable ? "Your complete journey, including your home civilization, saves on this device." : "Saving is unavailable. Progress lasts for this open tab."}</p><div class="chapter-options"><button class="modal-action" data-resume>Return to the stars</button><button class="modal-secondary" id="new-journey">New journey</button></div>`,
+    );
+    return;
+  }
   showModal(
     "journal",
     "The story of your species.",
-    `<p>${state.stage === "creature" ? "Chapter 02 · The Verdant Cradle" : "Chapter 01 · The Primordial Shallows"}</p><div class="notes-row"><span>Generation</span><strong>${state.generation}</strong></div><div class="notes-row"><span>Adaptations / DNA</span><strong>${state.speed + state.armor + state.magnet} / ${state.dna}</strong></div><div class="notes-row"><span>Time alive</span><strong>${Math.floor(state.elapsed / 60)}m ${Math.floor(state.elapsed % 60)}s</strong></div><div class="notes-row"><span>Cell nutrients / Land fruit</span><strong>${state.eaten} / ${state.land.fruit}</strong></div><div class="notes-row"><span>Landmarks / Companions</span><strong>${state.land.discoveries.length} / ${state.land.friends.length}</strong></div><p>${saveAvailable ? "Your journey saves on this device. Reloading resumes your progress." : "Your browser is not allowing saves. Progress lasts for this open tab."}</p><div class="chapter-options"><button class="modal-action" data-resume>Continue journey</button><button class="modal-secondary" id="new-journey">New journey</button></div>`,
+    `<p>${state.stage === "civilization" ? "Chapter 03 · The First Hearth" : state.stage === "creature" ? "Chapter 02 · The Verdant Cradle" : "Chapter 01 · The Primordial Shallows"}</p><div class="notes-row"><span>Generation</span><strong>${state.generation}</strong></div><div class="notes-row"><span>Adaptations / DNA</span><strong>${state.speed + state.armor + state.magnet} / ${state.dna}</strong></div><div class="notes-row"><span>Time alive</span><strong>${Math.floor(state.elapsed / 60)}m ${Math.floor(state.elapsed % 60)}s</strong></div><div class="notes-row"><span>Cell nutrients / Land fruit</span><strong>${state.eaten} / ${state.land.fruit}</strong></div><div class="notes-row"><span>Landmarks / Companions</span><strong>${state.land.discoveries.length} / ${state.land.friends.length}</strong></div>${state.stage === "civilization" ? `<div class="notes-row"><span>Villagers / Raids repelled</span><strong>${state.village.population} / ${state.village.survived}</strong></div>` : ""}<p>${saveAvailable ? "Your journey saves on this device. Reloading resumes your progress." : "Your browser is not allowing saves. Progress lasts for this open tab."}</p><div class="chapter-options"><button class="modal-action" data-resume>Continue journey</button><button class="modal-secondary" id="new-journey">New journey</button></div>`,
   );
 };
 pauseGame = function () {
@@ -1247,8 +1341,10 @@ gameOver = function () {
 };
 const cellRestart = restart;
 restart = function () {
-  if (state.stage === "creature" && dead) {
-    landWorld.respawn();
+  if (state.stage !== "cell" && dead) {
+    if (state.stage === "civilization" && state.village.defeated)
+      landWorld.recover();
+    else landWorld.respawn();
     dead = false;
     closeModal();
     saveProgress();
@@ -1262,7 +1358,7 @@ restart = function () {
   saveProgress();
 };
 
-function newGame() {
+function releaseLandWorld() {
   if (landWorld) {
     const geometries = new Set(),
       materials = new Set();
@@ -1274,9 +1370,25 @@ function newGame() {
     materials.forEach((m) => m.dispose());
     landWorld = null;
   }
+}
+
+function newGame() {
+  releaseLandWorld();
   state = newJourney();
   dead = false;
   $("game").classList.remove("land-mode");
+  $("game").classList.remove("civilization-mode");
+  $("game").classList.remove("space-mode");
+  $("space-hud").hidden = true;
+  $("launch-space").hidden = true;
+  for (const id of [
+    "village-resources",
+    "village-panel",
+    "village-mission",
+    "toggle-village",
+    "settlement-unlock",
+  ])
+    $(id).hidden = true;
   $("land-actions").hidden = true;
   $("interaction-hint").hidden = true;
   $("land-vitals").hidden = true;
@@ -1286,12 +1398,13 @@ function newGame() {
   $("species-subtitle").textContent = "Herbivore · Single-cell organism";
   $("stage-info").className = "stage active";
   $("creature-stage").className = "stage locked";
+  $("civilization-stage").className = "stage locked";
   $("biome-title").textContent = "THE PRIMORDIAL SHALLOWS";
   $("biome-time").textContent = "3.8 billion years before now";
   $("depth-name").textContent = "SHALLOWS";
   $("depth-value").textContent = "12 m ↓";
   $("food-legend").textContent = "Nutrients";
-  $("chapter-count").textContent = "01 / 03";
+  $("chapter-count").textContent = "01 / 04";
   $("chapter-eyebrow").textContent = "THE BEGINNING";
   $("chapter-title").textContent = "A spark of life";
   $("chapter-description").textContent = "Every great journey starts small.";
@@ -1301,6 +1414,256 @@ function newGame() {
     "Follow the green glow.<br>Stay clear of the red hunters.";
   restart();
   camera.position.set(0, 0, innerWidth < 760 ? 54 : 47);
+}
+
+function openSettlement() {
+  if (state.stage === "civilization") {
+    if (paused) closeModal();
+    toggleVillage();
+    return;
+  }
+  if (!canFound(state)) {
+    showModal(
+      "settlement-locked",
+      "A future together.",
+      `<p>Complete the creature chapter to found your settlement.</p><div class="chapter-intro"><p>Gather 12 fruit · ${Math.min(12, state.land.fruit)}/12</p><p>Befriend 2 creatures · ${Math.min(2, state.land.friends.length)}/2</p><p>Discover all 3 landmarks · ${state.land.discoveries.length}/3</p></div><p>Your existing adaptations and discoveries carry forward.</p><button class="modal-action" data-resume>Continue your journey</button>`,
+    );
+    return;
+  }
+  showModal(
+    "settlement",
+    "From a nest to a civilization.",
+    `<p>Your companions are ready to build a permanent home. Lead four villagers from the first hearth to a thriving settlement.</p><div class="chapter-intro"><p>Build gardens to feed your people and dwellings to welcome more.</p><p>Assign villagers to gather wood, stone, and food, or defend the village.</p><p>Prepare watchtowers before the first raid arrives in two minutes.</p></div><p>Grow to eight villagers, build two gardens and two watchtowers, repel two raids, then raise the Life monument.</p><div class="chapter-options"><button id="enter-civilization" class="modal-action">Found the First Hearth ↗</button><button data-resume class="modal-secondary">Stay in the valley</button></div>`,
+  );
+}
+
+function configureSettlementHUD() {
+  $("chapter-count").textContent = "03 / 04";
+  $("game").classList.add("civilization-mode");
+  for (const id of [
+    "village-resources",
+    "village-panel",
+    "village-mission",
+    "toggle-village",
+  ])
+    $(id).hidden = false;
+  $("settlement-unlock").hidden = true;
+  $("creature-stage").className = "stage previous";
+  $("civilization-stage").className = "stage current";
+  $("species-name").textContent = "The Lumina";
+  $("species-subtitle").textContent = "Founders · Verdant Hearth";
+  $("depth-name").textContent = "FIRST HEARTH";
+  $("depth-value").textContent = "DAY 1";
+  showVillageTab("build");
+  updateVillageUI();
+}
+
+function showVillageTab(tab) {
+  $("construction-page").hidden = tab !== "build";
+  $("people-page").hidden = tab !== "people";
+  $("build-tab").setAttribute("aria-pressed", String(tab === "build"));
+  $("people-tab").setAttribute("aria-pressed", String(tab === "people"));
+}
+
+function toggleVillage() {
+  if (state.stage !== "civilization" || dead) return;
+  $("village-panel").hidden = !$("village-panel").hidden;
+}
+
+function updateVillageUI() {
+  if (state.stage !== "civilization" || !landWorld) return;
+  const v = state.village,
+    rates = production(v);
+  for (const key of ["wood", "stone", "food"]) {
+    $(key + "-count").textContent = Math.floor(v.resources[key]);
+    $(key + "-rate").textContent =
+      `${rates[key] >= 0 ? "+" : ""}${rates[key].toFixed(1)}/s`;
+  }
+  $("village-population").textContent =
+    `${v.population} / ${Math.min(16, capacity(v))}`;
+  for (const button of $("build-menu").querySelectorAll("[data-build]")) {
+    const type = button.dataset.build;
+    button.classList.toggle("selected", landWorld.buildType === type);
+    button.classList.toggle(
+      "short-resources",
+      !affordable(v, BUILDINGS[type].cost),
+    );
+    button.setAttribute("aria-pressed", String(landWorld.buildType === type));
+  }
+  for (const job of JOBS) $("job-" + job).textContent = v.jobs[job];
+  for (const button of $("job-menu").querySelectorAll("[data-job]"))
+    button.disabled =
+      button.dataset.delta === "1"
+        ? idleWorkers(v) === 0
+        : v.jobs[button.dataset.job] === 0;
+  $("idle-count").textContent = `${idleWorkers(v)} villagers available`;
+  $("recruit-villager").disabled =
+    v.recruitTime > 0 ||
+    v.population >= Math.min(16, capacity(v)) ||
+    v.resources.food < 25;
+  $("recruit-villager").textContent =
+    v.recruitTime > 0
+      ? `Arriving in ${Math.ceil(v.recruitTime)}s`
+      : "Recruit villager · 25 food";
+  $("recruit-hint").textContent =
+    v.population >= 16
+      ? "Your settlement has reached 16 villagers."
+      : v.population >= capacity(v)
+        ? "Build a dwelling to welcome two more villagers."
+        : v.resources.food < 25
+          ? "Gather 25 food to recruit a villager."
+          : "New villagers arrive in 12 seconds. Assign their work.";
+  $("cancel-building").hidden = !landWorld.buildType;
+  const selected = v.buildings.find(
+    (b) => b.id === landWorld.selectedId && b.health > 0,
+  );
+  $("selected-building").textContent = landWorld.buildType
+    ? BUILDINGS[landWorld.buildType].name
+    : selected
+      ? BUILDINGS[selected.type].name
+      : "Choose a building";
+  $("building-condition").textContent = landWorld.buildType
+    ? landWorld.plot?.error ||
+      "Click a clear patch of ground inside the boundary."
+    : selected
+      ? selected.progress < 1
+        ? `Under construction · ${Math.ceil((1 - selected.progress) * BUILDINGS[selected.type].seconds)}s remaining`
+        : `Condition ${Math.ceil(selected.health)} / ${BUILDINGS[selected.type].health}`
+      : "Click a building in the world to inspect it.";
+  $("repair-building").hidden = !selected || !!landWorld.buildType;
+  $("repair-building").disabled =
+    !selected ||
+    selected.progress < 1 ||
+    selected.health >= BUILDINGS[selected.type].health ||
+    v.resources.wood < 10;
+  $("raid-status").className =
+    v.raiders.length || v.resources.food === 0 ? "danger" : "";
+  $("raid-status").textContent = v.defeated
+    ? "The hearth has fallen."
+    : v.raiders.length
+      ? `Raid ${v.wave} · ${v.raiders.length} raiders remain`
+      : v.completed
+        ? "The settlement is at peace."
+        : v.resources.food === 0
+          ? "Food depleted · The hearth is weakening!"
+          : `${v.wave ? "Next raid" : "First raid"} in ${Math.floor(v.nextRaid / 60)}:${String(Math.ceil(v.nextRaid % 60)).padStart(2, "0")}`;
+  const requirements = monumentRequirements(v),
+    monument = v.buildings.find((b) => b.type === "monument" && b.health > 0);
+  $("monument-requirements").innerHTML = requirements
+    .map(
+      (r) =>
+        `<div class="${r.done ? "done" : ""}">${r.done ? "✓" : "○"} ${r.text}</div>`,
+    )
+    .join("");
+  $("mission-title").textContent = v.completed
+    ? "A civilization takes root"
+    : monument
+      ? "The monument is rising"
+      : "Raise the Life monument";
+  $("evolution-label").textContent = v.completed
+    ? "From one cell to a lasting civilization."
+    : monument
+      ? `Monument construction · ${Math.round(monument.progress * 100)}%`
+      : "Build a future for your species.";
+  const percent = v.completed
+    ? 100
+    : Math.round(
+        (requirements.filter((r) => r.done).length / 5) * 100 +
+          (monument ? monument.progress * 20 : 0),
+      );
+  $("evolution-percent").textContent = percent + "%";
+  $("evolution-fill").style.width = percent + "%";
+}
+
+function showCivilizationHelp() {
+  showModal(
+    "help",
+    "Build a future together.",
+    `<p>Use the Build tab to select a structure, then click clear ground within the marked settlement boundary. A green outline means the plot is valid; a red outline explains what is missing. Escape cancels placement.</p><div class="notes-row"><span>Build / people panel</span><strong>B or Settlement</strong></div><div class="notes-row"><span>Assign work</span><strong>People tab · − and +</strong></div><div class="notes-row"><span>Move / defend</span><strong>WASD or hold pointer / Q</strong></div><div class="notes-row"><span>Repair</span><strong>Click a building · 10 wood</strong></div><p>Gardens produce food. Dwellings add capacity. Recruit villagers for 25 food, then assign their jobs. Wood camps and stone works speed up gathering. Guards protect attacked buildings; watchtowers fire automatically within range.</p><p>Grow to eight villagers, finish two gardens and two watchtowers, and repel two raids. Then build the Life monument to complete your civilization. Your settlement, construction, and raids all save automatically.</p><button class="modal-action" data-resume>Return to the hearth</button>`,
+  );
+}
+
+function settlementDefeat() {
+  dead = true;
+  showModal(
+    "settlement-defeat",
+    "The ember still glows.",
+    `<p>Your hearth has fallen. Your people will help rebuild it, bring emergency supplies, and give you two minutes to prepare. Surviving buildings, villagers, and completed milestones remain.</p><button class="modal-action" id="recover-settlement">Rekindle the hearth</button>`,
+  );
+}
+
+function civilizationVictory() {
+  showModal(
+    "victory",
+    "From a spark to a civilization.",
+    `<p>The Life monument stands. New raids have stopped, and your species is ready to reach beyond its home world.</p><p>Continue gathering resources, then open Spaceflight to research a launchpad and build your first spacecraft.</p><button class="modal-action" data-resume>Prepare for the stars</button>`,
+  );
+}
+
+function initializeSettlementControls() {
+  const costText = (cost) =>
+    Object.entries(cost)
+      .map(([key, value]) => `${value} ${key}`)
+      .join(" · ");
+  $("build-menu").innerHTML = Object.entries(BUILDINGS)
+    .filter(([key]) => key !== "hearth")
+    .map(
+      ([key, b]) =>
+        `<button class="build-card" data-build="${key}" aria-pressed="false" title="${b.description}"><span>${b.icon}</span><strong>${b.name}</strong><small>${costText(b.cost)}</small></button>`,
+    )
+    .join("");
+  const jobNames = {
+    wood: "Woodcutters",
+    stone: "Stoneworkers",
+    food: "Foragers",
+    guard: "Guards",
+  };
+  $("job-menu").innerHTML = JOBS.map(
+    (job) =>
+      `<div class="job-row"><span>${jobNames[job]}</span><button data-job="${job}" data-delta="-1" aria-label="Remove ${jobNames[job]}">−</button><strong id="job-${job}">0</strong><button data-job="${job}" data-delta="1" aria-label="Add ${jobNames[job]}">+</button></div>`,
+  ).join("");
+  $("build-menu").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-build]");
+    if (!button || paused || dead) return;
+    landWorld.chooseBuilding(button.dataset.build);
+    pointerDown = false;
+    updateVillageUI();
+  });
+  $("job-menu").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-job]");
+    if (!button || paused || dead) return;
+    if (
+      assignWorker(
+        state.village,
+        button.dataset.job,
+        Number(button.dataset.delta),
+      )
+    ) {
+      saveProgress();
+      updateVillageUI();
+    }
+  });
+  $("recruit-villager").onclick = () => {
+    if (paused || dead) return;
+    if (recruit(state.village)) {
+      saveProgress();
+      updateVillageUI();
+      toast("A new villager is on the way.");
+    }
+  };
+  $("build-tab").onclick = () => showVillageTab("build");
+  $("people-tab").onclick = () => showVillageTab("people");
+  $("toggle-village").onclick = toggleVillage;
+  $("cancel-building").onclick = () => {
+    landWorld?.cancelPlacement();
+    updateVillageUI();
+  };
+  $("repair-building").onclick = () => {
+    if (!paused && !dead) {
+      landWorld.repairSelected();
+      updateVillageUI();
+    }
+  };
 }
 
 $("modal-content").addEventListener("click", (event) => {
@@ -1313,6 +1676,16 @@ $("modal-content").addEventListener("click", (event) => {
     updateUI();
     toast("Chapter 02 · Welcome to the Verdant Cradle");
   }
+  if (button.id === "open-settlement") openSettlement();
+  if (button.id === "enter-civilization" && enterCivilizationStage(state)) {
+    releaseLandWorld();
+    startLand();
+    closeModal();
+    saveProgress();
+    updateUI();
+    toast("Chapter 03 · The First Hearth");
+  }
+  if (button.id === "recover-settlement") restart();
   if (button.dataset.color) {
     state.color = parseInt(button.dataset.color, 16);
     landWorld?.setColor(state.color);
@@ -1330,6 +1703,8 @@ $("modal-content").addEventListener("click", (event) => {
 });
 $("shore").onclick = openShore;
 $("creature-stage").onclick = openShore;
+$("civilization-stage").onclick = openSettlement;
+$("found-settlement").onclick = openSettlement;
 $("evolve").onclick = openEvolution;
 $("mobile-evolve").onclick = openEvolution;
 $("mobile-dash").onclick = dash;
@@ -1359,12 +1734,159 @@ $("return-nest").onclick = () => {
   );
 };
 addEventListener("keydown", (event) => {
-  if (event.repeat || paused || dead || state.stage !== "creature") return;
+  if (event.repeat || paused || dead || state.stage === "cell") return;
   if (event.code === "KeyQ") landWorld.attack();
   if (event.code === "KeyF") landWorld.sing();
+  if (event.code === "KeyB" && state.stage === "civilization") toggleVillage();
 });
 addEventListener("resize", () => landWorld?.resize(innerWidth, innerHeight));
 addEventListener("pagehide", saveProgress);
+function startSpace() {
+  landWorld = new SpaceWorld(state);
+  landWorld.resize(innerWidth, innerHeight);
+  $("game").classList.add("space-mode");
+  $("game").classList.remove("civilization-mode");
+  $("space-hud").hidden = false;
+  $("launch-space").hidden = true;
+  if (renderer.shadowMap) renderer.shadowMap.enabled = false;
+  $("space-systems").innerHTML = SYSTEMS.map(
+    (s) =>
+      `<button data-system="${s.id}"><span>${String(s.id + 1).padStart(2, "0")}</span>${s.name}<small>3 fuel</small></button>`,
+  ).join("");
+  updateSpaceUI();
+}
+function openSpaceflight() {
+  if (state.stage !== "civilization" || !state.village.completed) return;
+  const r = state.village.resources;
+  const researched = state.space.researched;
+  const ready = researched
+    ? r.wood >= 80 && r.stone >= 40 && r.food >= 60
+    : r.wood >= 80 && r.stone >= 80;
+  showModal(
+    "spaceflight",
+    researched ? "Your first spacecraft." : "The sky is only the beginning.",
+    `<p>${researched ? "The launchpad is ready. Build a vessel to carry your species into a frontier of nine star systems." : "Research orbital flight and construct a launchpad beside your civilization. Then prepare a spacecraft for the journey."}</p><div class="notes-row"><span>Available supplies</span><strong>${Math.floor(r.wood)} wood · ${Math.floor(r.stone)} stone · ${Math.floor(r.food)} food</strong></div><p>${researched ? "Spacecraft: 80 wood · 40 stone · 60 food" : "Launchpad research: 80 wood · 80 stone"}</p><p>Your home civilization is preserved while you explore space.</p><button class="modal-action" id="${researched ? "launch-vessel" : "research-flight"}" ${ready ? "" : "disabled"}>${researched ? "Launch into orbit ↗" : "Research spaceflight"}</button><button class="modal-secondary" data-resume>Return to settlement</button>`,
+  );
+}
+function updateSpaceUI() {
+  const s = state.space,
+    system = SYSTEMS[s.system],
+    p = system.planets[s.planet];
+  const busy = landWorld?.transit > 0;
+  $("space-location").textContent = system.name;
+  $("space-fuel").textContent = `${s.fuel.toFixed(1)} / 12`;
+  $("space-ore").textContent = Math.floor(s.ore);
+  $("space-data").textContent = Math.floor(s.data);
+  $("space-planet-name").textContent = p.name;
+  $("space-planet-kind").textContent =
+    `${p.kind}${p.inhabited ? " · Radio signals detected" : ""}`;
+  $("space-status").textContent = busy
+    ? "Crossing the interstellar frontier…"
+    : s.colonies.includes(p.id)
+      ? "Colony established · Producing ore"
+      : s.surveyed.includes(p.id)
+        ? "Survey complete · Choose your next discovery"
+        : "Uncharted world · Ready for orbital survey";
+  $("space-progress").textContent =
+    `${Math.min(6, s.surveyed.length)}/6 surveys · ${Math.min(3, s.colonies.length)}/3 colonies · ${Math.min(2, s.contacts.length)}/2 contacts`;
+  $("space-goal").textContent = s.completed
+    ? "Horizon beacon active · Keep exploring"
+    : "Connect your species to the stars";
+  $("space-survey").disabled = busy || s.surveyed.includes(p.id);
+  $("space-colonize").disabled =
+    busy ||
+    !p.habitable ||
+    !s.surveyed.includes(p.id) ||
+    s.colonies.includes(p.id) ||
+    s.ore < 40 ||
+    s.data < 20;
+  $("space-contact").hidden = !p.inhabited;
+  $("space-contact").disabled =
+    busy || !s.surveyed.includes(p.id) || s.contacts.includes(p.id);
+  $("space-beacon").disabled =
+    busy || s.completed || !beaconReady(s) || s.ore < 60 || s.data < 40;
+  for (const button of $("space-systems").querySelectorAll("button")) {
+    const current = Number(button.dataset.system) === s.system;
+    button.classList.toggle("selected", current);
+    button.setAttribute("aria-pressed", String(current));
+    button.disabled = current || busy || s.fuel < 3;
+  }
+  for (const button of $("space-planets").querySelectorAll("button")) {
+    const n = Number(button.dataset.planet);
+    button.textContent = system.planets[n].name;
+    button.classList.toggle("selected", n === s.planet);
+    button.setAttribute("aria-pressed", String(n === s.planet));
+    button.disabled = busy;
+  }
+}
+$("launch-space").onclick = openSpaceflight;
+$("space-journal").onclick = journal;
+$("modal-content").addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  if (button.id === "research-flight" && researchSpace(state)) {
+    saveProgress();
+    openSpaceflight();
+  }
+  if (button.id === "launch-vessel" && launchSpace(state)) {
+    releaseLandWorld();
+    startSpace();
+    closeModal();
+    saveProgress();
+    toast("Chapter 04 · The Starward Frontier");
+  }
+});
+$("space-hud").addEventListener("click", (event) => {
+  const b = event.target.closest("button");
+  if (!b || paused || state.stage !== "space" || landWorld.transit > 0) return;
+  const s = state.space;
+  if (b.dataset.system !== undefined && jump(s, Number(b.dataset.system))) {
+    landWorld.setDestination();
+    soundNote(180, 0.6);
+  }
+  if (b.dataset.planet !== undefined) {
+    const p = Number(b.dataset.planet);
+    if (Number.isInteger(p) && p >= 0 && p < 3) s.planet = p;
+  }
+  if (b.id === "space-survey" && survey(s))
+    toast("Survey complete · +18 ore · +12 knowledge");
+  if (b.id === "space-colonize" && colonize(s))
+    toast("A new home among the stars · Colony established");
+  if (b.id === "space-contact" && contact(s))
+    toast("Peaceful contact · +20 ore · +15 knowledge");
+  if (b.id === "space-beacon" && buildBeacon(s))
+    showModal(
+      "space-victory",
+      "From a single cell to the stars.",
+      '<p>Your Horizon beacon carries the story of your species across the frontier. Your colonies and new allies are connected. All four chapters are complete.</p><p>The remaining worlds are yours to discover.</p><button class="modal-action" data-resume>Keep exploring the galaxy</button>',
+    );
+  saveProgress();
+  updateSpaceUI();
+});
+initializeSettlementControls();
+const BUILD_VERSION = "0.4.0";
+$("reload-update").onclick = () => {
+  if (!saveProgress()) {
+    toast(
+      "Saving is unavailable. Reload manually only if you are ready to restart.",
+    );
+    return;
+  }
+  location.reload();
+};
+if (typeof window !== "undefined" && typeof fetch === "function") {
+  setInterval(async () => {
+    try {
+      const response = await fetch("./build.json", { cache: "no-store" });
+      if (!response.ok) return;
+      const build = await response.json();
+      $("update-notice").hidden =
+        !build.version || build.version === BUILD_VERSION;
+    } catch {
+      /* An offline session can continue without update checks. */
+    }
+  }, 30000);
+}
 const savedJourney = loadJourney(saveStorage);
 if (savedJourney) {
   state = savedJourney;
@@ -1372,9 +1894,11 @@ if (savedJourney) {
   player.position.set(state.cellPosition.x, state.cellPosition.y, 0);
   camera.position.x = player.position.x;
   camera.position.y = player.position.y;
-  if (state.stage === "creature") startLand();
+  if (state.stage !== "cell") startLand();
   pauseGame();
   $("modal-title").textContent = "Welcome back, little explorer.";
+  if (state.stage === "civilization" && state.village.defeated)
+    settlementDefeat();
 }
 updateUI();
 drawMap();

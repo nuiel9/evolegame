@@ -93,7 +93,7 @@ export function makeCreature(color, hunter = false, traits = {}) {
   return root;
 }
 
-function animateCreature(c, time, moving, singing = false) {
+export function animateCreature(c, time, moving, singing = false) {
   const d = c.userData,
     phase = time * (moving ? 10 : 2);
   d.body.position.z = Math.sin(phase * 2) * (moving ? 0.055 : 0.018);

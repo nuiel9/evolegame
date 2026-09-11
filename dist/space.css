@@ -1,0 +1,251 @@
+#launch-space {
+  position: fixed;
+  z-index: 12;
+  bottom: 155px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 16px 25px;
+  border: 1px solid #bae5ff;
+  background: #ceeaff;
+  color: #0b2139;
+  border-radius: 12px;
+  font: 600 16px inherit;
+  cursor: pointer;
+}
+#space-hud[hidden],
+#launch-space[hidden] {
+  display: none;
+}
+#modal {
+  z-index: 40;
+}
+#toast {
+  z-index: 50;
+}
+.space-mode header {
+  z-index: 15;
+}
+.space-mode > .organism,
+.space-mode > .objectives,
+.space-mode > .environment,
+.space-mode > footer,
+.space-mode > .biome-label,
+.space-mode > .player-tag,
+.space-mode > .chapter-hud,
+.space-mode > .mobile-controls,
+.space-mode #land-actions,
+.space-mode #interaction-hint,
+.space-mode #village-panel,
+.space-mode #village-resources,
+.space-mode #village-mission,
+.space-mode #toggle-village,
+.space-mode #settlement-unlock,
+.space-mode nav {
+  display: none !important;
+}
+.space-mode #save-status {
+  bottom: 12px;
+}
+#space-hud {
+  position: fixed;
+  inset: 100px 0 30px;
+  pointer-events: none;
+  color: #e1edff;
+  z-index: 9;
+  font-size: 16px;
+}
+#space-hud aside {
+  position: absolute;
+  pointer-events: auto;
+  padding: 24px;
+  border: 1px solid #53729755;
+  background: linear-gradient(140deg, #102137ee, #070f1dda);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  max-height: 100%;
+  overflow-y: auto;
+}
+.star-navigation {
+  left: 24px;
+  width: 300px;
+}
+.planet-console {
+  right: 24px;
+  width: 320px;
+  bottom: 0;
+}
+#space-hud h1 {
+  font-size: 38px;
+  font-weight: 500;
+  margin: 14px 0 0;
+  letter-spacing: -1px;
+}
+#space-hud h2 {
+  font-size: 22px;
+  margin: 20px 0 12px;
+}
+#space-hud h3 {
+  font-size: 19px;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+#space-hud p {
+  color: #a4bad4;
+  line-height: 1.5;
+  margin: 10px 0 16px;
+}
+#space-hud .eyebrow {
+  color: #89b3dc;
+  font-size: 12px;
+  letter-spacing: 1.6px;
+}
+#space-hud button {
+  font: inherit;
+  font-size: 14px;
+  border: 1px solid #58789a66;
+  border-radius: 9px;
+  background: #1b3045;
+  color: #e1edff;
+  padding: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+#space-hud button:hover:enabled {
+  background: #2c4865;
+}
+#space-hud button:focus-visible {
+  outline: 2px solid #c8efad;
+  outline-offset: 3px;
+}
+#space-hud button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+#space-hud button.selected {
+  border-color: #c8efad;
+  background: #304738;
+  opacity: 1;
+}
+#space-hud button small {
+  display: block;
+  font-size: 12px;
+  margin-top: 5px;
+  color: #adc1d9;
+  line-height: 1.4;
+}
+.space-resources {
+  display: flex;
+  gap: 20px;
+  padding: 18px 0;
+  border-block: 1px solid #7796bd33;
+}
+.space-resources strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 21px;
+  font-weight: 500;
+}
+.space-resources small {
+  font-size: 12px;
+  color: #89b3dc;
+}
+#space-hud .space-caption {
+  font-size: 12px;
+}
+#space-systems {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+#space-systems button {
+  padding: 10px 7px;
+}
+#space-systems span {
+  display: block;
+  color: #88a6c6;
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+#space-journal {
+  width: 100%;
+  margin-top: 18px;
+}
+#space-planets {
+  display: flex;
+  gap: 6px;
+  margin-top: 16px;
+}
+#space-planets button {
+  flex: 1;
+  padding: 10px 6px;
+  text-align: center;
+  font-size: 12px;
+}
+.space-commands {
+  display: grid;
+  gap: 9px;
+}
+#space-survey {
+  background: #c8e9aa !important;
+  color: #172b21 !important;
+}
+#space-survey small {
+  color: #3b5946 !important;
+}
+.space-mission {
+  margin-top: 23px;
+  border-top: 1px solid #7796bd33;
+  padding-top: 20px;
+}
+#space-beacon {
+  width: 100%;
+}
+@media (max-width: 1100px) {
+  #space-hud aside {
+    padding: 16px;
+  }
+  .star-navigation {
+    width: 250px;
+    left: 12px;
+  }
+  .planet-console {
+    width: 275px;
+    right: 12px;
+  }
+}
+@media (max-width: 760px) {
+  #space-hud {
+    inset: 90px 0 24px;
+    overflow-y: auto;
+    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #space-hud aside {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    max-height: none;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  #space-hud .star-navigation {
+    margin-top: 180px;
+  }
+  #space-hud h1 {
+    font-size: 30px;
+  }
+  #space-systems {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  #space-hud .space-resources {
+    justify-content: space-between;
+  }
+  #launch-space {
+    bottom: 115px;
+  }
+}

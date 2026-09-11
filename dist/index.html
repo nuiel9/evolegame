@@ -6,16 +6,17 @@
     <meta name="theme-color" content="#061b20" />
     <meta
       name="description"
-      content="From a single cell to your first steps on land. Feed, adapt, befriend, and explore in an original Three.js evolution game."
+      content="Evolve from a single cell to a civilization among the stars. Adapt, explore, build, and colonize new worlds in an original Three.js evolution game."
     />
     <title>Primordia — An Evolution Odyssey</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="chapters.css" />
+    <link rel="stylesheet" href="settlement.css" />
   </head>
   <body>
     <main id="game">
-      <canvas id="ocean" aria-label="Interactive microscopic ocean"></canvas>
+      <canvas id="ocean" aria-label="Interactive evolution world"></canvas>
       <div class="vignette"></div>
       <header>
         <a class="brand" href="./" aria-label="Primordia home"
@@ -31,7 +32,9 @@
             <i>02</i> Creature <span>◇</span>
           </button>
           <span class="stage-line"></span>
-          <div class="stage locked"><i>03</i> Civilization <span>◇</span></div>
+          <button id="civilization-stage" class="stage locked">
+            <i>03</i> Civilization <span>◇</span>
+          </button>
         </nav>
         <div class="top-actions">
           <button
@@ -84,7 +87,7 @@
       <aside class="objectives">
         <div class="eyebrow">
           <span id="chapter-eyebrow">THE BEGINNING</span
-          ><span id="chapter-count">01 / 03</span>
+          ><span id="chapter-count">01 / 04</span>
         </div>
         <h2 id="chapter-title">A spark of life</h2>
         <p id="chapter-description">Every great journey starts small.</p>
@@ -208,6 +211,70 @@
       </div>
       <div id="interaction-hint" hidden role="status"></div>
       <div id="save-status" aria-live="polite">Autosave ready</div>
+      <div id="build-version">v0.4 · Four chapters</div>
+      <div id="update-notice" hidden role="status">
+        <span>A new game update is ready.</span
+        ><button id="reload-update">Save & reload</button>
+      </div>
+      <div id="settlement-unlock" hidden>
+        <span>A FUTURE TOGETHER</span><strong>More than a species.</strong
+        ><button id="found-settlement">Found a settlement ↗</button>
+      </div>
+      <div id="village-resources" hidden aria-label="Settlement resources">
+        <div>
+          <span>♧</span>
+          <p>Wood<strong id="wood-count">110</strong></p>
+          <small id="wood-rate">+1.4/s</small>
+        </div>
+        <div>
+          <span>◇</span>
+          <p>Stone<strong id="stone-count">85</strong></p>
+          <small id="stone-rate">+0.6/s</small>
+        </div>
+        <div>
+          <span>❧</span>
+          <p>Food<strong id="food-count">90</strong></p>
+          <small id="food-rate">+0.5/s</small>
+        </div>
+      </div>
+      <aside id="village-panel" hidden>
+        <div class="eyebrow">
+          VERDANT HEARTH <span id="village-population">4 / 4</span>
+        </div>
+        <div class="village-tabs">
+          <button id="build-tab" aria-pressed="true">Build</button
+          ><button id="people-tab" aria-pressed="false">People</button>
+        </div>
+        <section id="construction-page">
+          <div id="build-menu"></div>
+          <button id="cancel-building" hidden>
+            Cancel placement <kbd>Esc</kbd>
+          </button>
+          <div id="building-details">
+            <strong id="selected-building">Hearth</strong>
+            <p id="building-condition">Your settlement begins here.</p>
+            <button id="repair-building">Repair · 10 wood</button>
+          </div>
+        </section>
+        <section id="people-page" hidden>
+          <p class="village-intro">
+            Assign villagers to support your settlement.
+          </p>
+          <div id="job-menu"></div>
+          <p id="idle-count">0 villagers available</p>
+          <button id="recruit-villager">Recruit villager · 25 food</button
+          ><small id="recruit-hint">Build a dwelling to grow.</small>
+        </section>
+        <div id="raid-status">First raid in 2:00</div>
+      </aside>
+      <div id="village-mission" hidden>
+        <span class="eyebrow">A LASTING CIVILIZATION</span
+        ><strong id="mission-title">Raise the Life monument</strong>
+        <div id="monument-requirements"></div>
+      </div>
+      <button id="toggle-village" hidden>
+        <span>⌂</span> Settlement <kbd>B</kbd>
+      </button>
       <div class="land-actions" id="land-actions" hidden>
         <button id="attack">
           <kbd>Q</kbd><span>Strike</span
@@ -222,6 +289,53 @@
         ><button id="mobile-evolve">Evolve</button>
       </div>
     </main>
+    <link rel="stylesheet" href="space.css" />
+    <button id="launch-space" hidden>↗ Spaceflight</button>
+    <section id="space-hud" hidden aria-label="Space exploration">
+      <aside class="star-navigation">
+        <span class="eyebrow">04 / 04 · THE STARWARD FRONTIER</span>
+        <h1 id="space-location">Solara</h1>
+        <p>Nine stars. Twenty-seven worlds.</p>
+        <div class="space-resources">
+          <div><small>FUEL</small><strong id="space-fuel"></strong></div>
+          <div><small>ORE</small><strong id="space-ore"></strong></div>
+          <div><small>KNOWLEDGE</small><strong id="space-data"></strong></div>
+        </div>
+        <p class="space-caption">Solar collectors restore 0.3 fuel / second.</p>
+        <h2>Star chart</h2>
+        <div id="space-systems"></div>
+        <button id="space-journal">Journey & save details</button>
+      </aside>
+      <aside class="planet-console">
+        <span class="eyebrow">ORBITAL EXPLORATION</span>
+        <div id="space-planets">
+          <button data-planet="0">I</button><button data-planet="1">II</button
+          ><button data-planet="2">III</button>
+        </div>
+        <h2 id="space-planet-name">Solara II</h2>
+        <p id="space-planet-kind"></p>
+        <p id="space-status" role="status"></p>
+        <div class="space-commands">
+          <button id="space-survey">
+            Survey world <small>+18 ore · +12 knowledge</small></button
+          ><button id="space-colonize">
+            Establish colony
+            <small>40 ore · 20 knowledge · Garden worlds</small></button
+          ><button id="space-contact">
+            Make peaceful contact
+            <small>Exchange knowledge and resources</small>
+          </button>
+        </div>
+        <div class="space-mission">
+          <span class="eyebrow">THE HORIZON PROJECT</span>
+          <h3 id="space-goal">Connect your species to the stars</h3>
+          <p id="space-progress"></p>
+          <button id="space-beacon">
+            Build Horizon beacon <small>60 ore · 40 knowledge</small>
+          </button>
+        </div>
+      </aside>
+    </section>
     <script type="module" src="game.js"></script>
   </body>
 </html>

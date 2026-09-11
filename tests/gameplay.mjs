@@ -2,10 +2,16 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import * as THREE from "../dist/three.module.js";
 import { CreatureWorld } from "../dist/creature.js";
+import { SettlementWorld } from "../dist/settlement.js";
+import { SpaceWorld } from "../dist/space.js";
+import * as spaceRules from "../dist/space-rules.js";
+import * as settlementRules from "../dist/settlement-rules.js";
 import {
   newJourney,
   canWalk,
+  canFound,
   enterCreatureStage,
+  enterCivilizationStage,
   saveJourney,
   loadJourney,
 } from "../dist/progression.js";
@@ -74,17 +80,29 @@ state.dna=90;upgrade('speed');upgrade('armor');upgrade('magnet');assert(canWalk(
 assert(enterCreatureStage(state));startLand();assert.equal(state.stage,'creature');assert.equal(landWorld.state,state);
 state.dna=30;upgrade('armor');assert.equal(state.armor,2);assert.equal(state.dna,0);assert.equal(state.generation,5);
 gameOver();assert(dead);restart();assert.equal(state.stage,'creature');assert.equal(state.generation,5);assert.equal(state.health,100);
+state.land.fruit=12;state.land.friends=[0,1];state.land.discoveries=['arch','grove','spire'];state.land.completed=true;
+assert(canFound(state));assert(enterCivilizationStage(state));releaseLandWorld();startLand();assert(landWorld instanceof SettlementWorld);assert.equal(state.village.population,4);
+landWorld.chooseBuilding('hut');assert.equal(landWorld.buildType,'hut');landWorld.cancelPlacement();assert.equal(landWorld.buildType,null);
+state.village.buildings[0].health=0;state.village.defeated=true;settlementDefeat();assert(dead);restart();assert.equal(state.village.defeated,false);assert.equal(state.stage,'civilization');assert.equal(state.village.buildings[0].health,300);
 newGame();assert.equal(state.stage,'cell');assert.equal(landWorld,null);assert.equal(state.generation,1);assert.equal(state.land.fruit,0);
+state.stage='civilization';state.village.completed=true;state.village.resources={wood:200,stone:200,food:200};assert(researchSpace(state));assert(launchSpace(state));startLand();assert(landWorld instanceof SpaceWorld);updateUI();loop(lastTime+16);showHelp();closeModal();assert.equal(state.stage,'space');
+newGame();assert.equal(state.stage,'cell');assert.equal(landWorld,null);
 clearTimeout(toastTimer);
-console.log('PASS: cell gameplay, stage unlock, land entry, inherited adaptations, land respawn, and new journey.');
+console.log('PASS: cell gameplay, land entry, civilization entry, inherited traits, recovery, and new journey.');
 `;
 new Function(
   "THREE",
   "assert",
   "CreatureWorld",
+  "SettlementWorld",
+  "SpaceWorld",
+  ...Object.keys(spaceRules),
+  ...Object.keys(settlementRules),
   "newJourney",
   "canWalk",
+  "canFound",
   "enterCreatureStage",
+  "enterCivilizationStage",
   "saveJourney",
   "loadJourney",
   source + tests,
@@ -92,9 +110,15 @@ new Function(
   { ...THREE, WebGLRenderer: Renderer },
   assert,
   CreatureWorld,
+  SettlementWorld,
+  SpaceWorld,
+  ...Object.values(spaceRules),
+  ...Object.values(settlementRules),
   newJourney,
   canWalk,
+  canFound,
   enterCreatureStage,
+  enterCivilizationStage,
   saveJourney,
   loadJourney,
 );
