@@ -1,0 +1,418 @@
+[hidden] {
+  display: none !important;
+}
+.objective div > .objective-title {
+  color: inherit;
+  font-size: inherit;
+  margin-top: 0;
+}
+.objectives .eyebrow > #chapter-eyebrow {
+  color: inherit;
+  letter-spacing: inherit;
+}
+.chapter-hud {
+  position: absolute;
+  top: 425px;
+  left: 36px;
+  width: 276px;
+  pointer-events: none;
+}
+#chapter-banner {
+  background: linear-gradient(130deg, #b5d595, #839f71);
+  color: #203d31;
+  border: 1px solid #d4e9b1;
+  border-radius: 10px;
+  padding: 18px;
+  pointer-events: auto;
+  box-shadow: 0 8px 30px #0002;
+}
+#chapter-banner > span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+}
+#chapter-banner strong {
+  display: block;
+  font-family: Manrope, sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  margin: 10px 0 15px;
+}
+#shore {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #183a31;
+  color: #e4f2cf;
+  padding: 11px 14px;
+  width: 100%;
+  border-radius: 5px;
+  font-size: 12px;
+}
+#shore:hover {
+  background: #28533b;
+}
+#land-vitals {
+  padding: 15px 18px;
+  background: #0e2e29bd;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  backdrop-filter: blur(10px);
+}
+#land-vitals > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #ccdbc0;
+}
+#land-vitals strong {
+  font-weight: 400;
+}
+#land-vitals .meter {
+  margin-bottom: 0;
+}
+#hunger-bar {
+  background: #e0b982;
+}
+#interaction-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 201px;
+  transform: translateX(-50%);
+  padding: 9px 18px;
+  background: #102d26bf;
+  border: 1px solid #c8dcb128;
+  border-radius: 30px;
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  color: #dce9cd;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#save-status {
+  position: absolute;
+  right: 42px;
+  top: 115px;
+  font-size: 10px;
+  color: #94b3a1;
+  letter-spacing: 0.4px;
+}
+.land-actions {
+  position: absolute;
+  left: 50%;
+  bottom: 132px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 9px;
+}
+.land-actions button {
+  min-width: 89px;
+  display: grid;
+  grid-template-columns: 23px 1fr;
+  align-items: center;
+  gap: 4px 7px;
+  padding: 11px 12px;
+  background: #102d26da;
+  border: 1px solid #a5c4a044;
+  border-radius: 8px;
+  box-shadow: 0 3px 15px #102d2622;
+  text-align: left;
+  backdrop-filter: blur(8px);
+}
+.land-actions button:hover {
+  background: #315341;
+}
+.land-actions button > span {
+  font-size: 12px;
+}
+.land-actions small {
+  font-size: 9px;
+  color: #9cae93;
+  grid-column: 2;
+}
+.land-actions kbd {
+  grid-row: 1 / 3;
+}
+.land-actions button:last-child > span:first-child {
+  font-size: 22px;
+}
+.stage.unlocked {
+  color: #badf9c;
+  cursor: pointer;
+}
+.stage.current {
+  color: #dcf2b7;
+}
+.stage.current i {
+  background: #c4ed9b;
+  color: #173c31;
+}
+.stage.previous {
+  color: #93b29b;
+}
+.land-mode header {
+  background: linear-gradient(#173f39d4, #163a3229);
+}
+.land-mode .vignette {
+  background: radial-gradient(
+    ellipse at 50% 48%,
+    transparent 35%,
+    #183b3225 80%,
+    #0c261c77
+  );
+}
+.land-mode .panel {
+  background: linear-gradient(120deg, #173c31d1, #173f3388);
+}
+.land-mode .objectives {
+  background: #133b308c;
+  border: 1px solid #c8dcb12a;
+  border-radius: 12px;
+  padding: 18px;
+  width: 246px;
+  backdrop-filter: blur(10px);
+}
+.land-mode .objectives h2 {
+  margin-top: 12px;
+}
+.land-mode .objectives p {
+  color: #bad0ba;
+}
+.land-mode .objective {
+  font-size: 12px;
+}
+.land-mode .objective div > span {
+  color: #b3ccb1;
+}
+.land-mode .objectives .eyebrow {
+  color: #b7cab0;
+}
+.land-mode .biome-label {
+  background: #12372b70;
+  border-radius: 8px;
+  padding: 14px;
+  backdrop-filter: blur(8px);
+}
+.land-mode .biome-label small {
+  color: #b6cbb2;
+}
+.land-mode .biome-label > span:nth-child(2) {
+  color: #e4ebcd;
+}
+.land-mode .environment {
+  background: #133b30bf;
+}
+.land-mode .player-tag {
+  display: none;
+}
+.land-mode footer {
+  background: linear-gradient(#112e2270, #0d2b22e8);
+}
+.chapter-intro {
+  border-left: 2px solid #c4ed9b;
+  padding-left: 18px;
+  margin: 22px 0;
+}
+.chapter-intro p {
+  margin: 6px 0;
+}
+.chapter-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+.modal-secondary {
+  border: 1px solid #b5d2a745;
+  background: transparent;
+  color: #bad1b1;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.progress-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+.progress-summary > div {
+  padding: 16px;
+  background: #ffffff05;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.progress-summary strong {
+  display: block;
+  font-size: 24px;
+  color: var(--lime);
+  font-weight: 500;
+}
+.progress-summary span {
+  font-size: 11px;
+  color: #a8bfac;
+}
+.adaptation:disabled {
+  opacity: 0.55;
+}
+.notes-row {
+  gap: 18px;
+}
+.notes-row strong {
+  text-align: right;
+}
+.modal .eyebrow {
+  font-size: 11px;
+}
+.modal p {
+  font-size: 15px;
+}
+.adaptation p {
+  font-size: 12px;
+}
+.adaptation strong {
+  font-size: 12px;
+}
+@media (min-width: 1600px) {
+  .chapter-hud {
+    left: 48px;
+    top: 442px;
+  }
+}
+@media (max-width: 1100px) {
+  .chapter-hud {
+    left: 22px;
+    width: 236px;
+    top: 415px;
+  }
+  .land-mode .objectives {
+    right: 22px;
+    width: 214px;
+    padding: 14px;
+  }
+  #save-status {
+    right: 25px;
+  }
+}
+@media (max-width: 760px) {
+  .chapter-hud {
+    top: 318px;
+    left: 15px;
+    width: 194px;
+  }
+  #chapter-banner {
+    padding: 12px;
+  }
+  #chapter-banner strong {
+    font-size: 16px;
+    margin: 7px 0 11px;
+  }
+  #chapter-banner > span {
+    font-size: 8px;
+  }
+  #shore {
+    font-size: 10px;
+    padding: 9px;
+  }
+  #land-vitals {
+    padding: 11px 13px;
+  }
+  #land-vitals > div:first-child {
+    font-size: 10px;
+  }
+  #save-status {
+    top: 84px;
+    right: 17px;
+    font-size: 8px;
+  }
+  .land-mode .objectives {
+    right: 12px;
+    top: 108px;
+    width: 142px;
+    padding: 11px;
+  }
+  .land-mode .objectives .eyebrow {
+    font-size: 7px;
+  }
+  .land-mode .objectives h2 {
+    font-size: 16px;
+  }
+  .land-mode .objective {
+    font-size: 10px;
+  }
+  .land-mode .objective div > span {
+    font-size: 8px;
+  }
+  .land-mode .biome-label {
+    display: none;
+  }
+  .land-mode .environment {
+    bottom: 207px;
+    width: 117px;
+  }
+  .land-mode #minimap {
+    height: 69px;
+  }
+  .land-actions {
+    bottom: 130px;
+    gap: 6px;
+  }
+  .land-actions button {
+    min-width: 79px;
+    padding: 9px;
+  }
+  .land-actions button:last-child {
+    display: none;
+  }
+  #interaction-hint {
+    bottom: 186px;
+    font-size: 10px;
+    max-width: 96vw;
+    white-space: normal;
+    text-align: center;
+    width: max-content;
+  }
+  .land-mode .mobile-controls {
+    bottom: 135px;
+  }
+  .land-mode .mobile-controls button {
+    width: 43px;
+    height: 43px;
+  }
+  .land-mode #land-vitals {
+    background: #143c32e0;
+  }
+  .progress-summary > div {
+    padding: 10px;
+  }
+  .progress-summary span {
+    font-size: 10px;
+  }
+  .notes-row {
+    font-size: 12px;
+  }
+  .modal p {
+    font-size: 14px;
+  }
+}
+@media (max-height: 720px) and (min-width: 761px) {
+  .organism {
+    top: 123px;
+    padding: 15px;
+  }
+  .species {
+    margin: 14px 0;
+  }
+  .chapter-hud {
+    top: 365px;
+  }
+  #chapter-banner {
+    padding: 12px;
+  }
+  .environment {
+    bottom: 130px;
+  }
+  .biome-label {
+    bottom: 143px;
+  }
+}
